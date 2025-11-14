@@ -1,10 +1,14 @@
 [project]
 name = "e2b-mcp-py"
-version = "0.1.0"
-description = "Python demo using E2B with GitHub and Notion MCP servers"
+version = "0.2.0"
+description = "Deep Agents implementation with E2B sandbox integration"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "e2b>=2.3.4",
     "python-dotenv>=1.1.1",
+    "deepagents>=0.1.0",
+    "langchain>=0.3.0",
+    "langchain-anthropic>=0.3.0",
+    "langgraph>=0.2.0",
 ]
