@@ -68,7 +68,7 @@ class DeepAgentE2B:
 
     def _setup_sandbox(self):
         """Create and configure the E2B sandbox with MCP servers."""
-        print("🚀 Creating E2B sandbox with MCP servers...")
+        print("Creating E2B sandbox with MCP servers...")
 
         # Configure MCP servers based on available tokens
         mcp_servers_config = {}
@@ -76,19 +76,19 @@ class DeepAgentE2B:
         if self.github_token:
             github = GithubOfficial(githubPersonalAccessToken=self.github_token)
             mcp_servers_config["githubOfficial"] = github
-            print("  ✓ GitHub MCP server configured")
+            print("  GitHub MCP server configured")
 
         if self.notion_token:
             notion = Notion(internalIntegrationToken=self.notion_token)
             mcp_servers_config["notion"] = notion
-            print("  ✓ Notion MCP server configured")
+            print("  Notion MCP server configured")
 
         # Create MCP server instance
         if mcp_servers_config:
             mcp_servers = McpServer(**mcp_servers_config)
         else:
             mcp_servers = None
-            print("  ⚠ Warning: No MCP servers configured (no tokens provided)")
+            print("  Warning: No MCP servers configured (no tokens provided)")
 
         # Create sandbox with environment variables and MCP servers
         self.sandbox = Sandbox.beta_create(
@@ -97,7 +97,7 @@ class DeepAgentE2B:
             timeout=self.sandbox_timeout,
         )
 
-        print(f"  ✓ Sandbox created (ID: {self.sandbox.id})")
+        print(f"  Sandbox created (ID: {self.sandbox.id})")
 
         # Configure Claude CLI with MCP in the sandbox
         if mcp_servers:
@@ -110,17 +110,17 @@ class DeepAgentE2B:
             )
 
             if result.exit_code == 0:
-                print("  ✓ Claude CLI configured with MCP gateway")
+                print("  Claude CLI configured with MCP gateway")
             else:
-                print(f"  ⚠ Warning: MCP gateway setup had issues: {result.stderr}")
+                print(f"  Warning: MCP gateway setup had issues: {result.stderr}")
 
         # Create E2B tools for the agent
         self.tools = E2BSandboxTools.create_tools(self.sandbox)
-        print(f"  ✓ Created {len(self.tools)} E2B sandbox tools")
+        print(f"  Created {len(self.tools)} E2B sandbox tools")
 
     def _setup_agent(self):
         """Initialize the deep agent with custom tools and configuration."""
-        print("🤖 Initializing deep agent...")
+        print("Initializing deep agent...")
 
         # Create Claude model
         model = ChatAnthropic(
@@ -165,7 +165,7 @@ Remember: You're operating in a secure E2B sandbox, so you can safely execute co
             model=model,
         )
 
-        print("  ✓ Deep agent initialized with E2B tools")
+        print("  Deep agent initialized with E2B tools")
 
     def invoke(self, task: str) -> dict:
         """
@@ -177,19 +177,19 @@ Remember: You're operating in a secure E2B sandbox, so you can safely execute co
         Returns:
             Dictionary containing the agent's response and metadata
         """
-        print(f"\n📋 Task: {task}\n")
+        print(f"\nTask: {task}\n")
         print("=" * 80)
 
         response = self.agent.invoke({"messages": [{"role": "user", "content": task}]})
 
         print("=" * 80)
-        print("\n✅ Task completed\n")
+        print("\nTask completed\n")
 
         return response
 
     def chat(self):
         """Start an interactive chat session with the agent."""
-        print("\n💬 Starting interactive chat with Deep Agent")
+        print("\nStarting interactive chat with Deep Agent")
         print("   Type 'exit' or 'quit' to end the session\n")
         print("=" * 80)
 
@@ -197,10 +197,10 @@ Remember: You're operating in a secure E2B sandbox, so you can safely execute co
 
         while True:
             try:
-                user_input = input("\n👤 You: ").strip()
+                user_input = input("\nYou: ").strip()
 
                 if user_input.lower() in ["exit", "quit", "q"]:
-                    print("\n👋 Ending chat session. Goodbye!")
+                    print("\nEnding chat session. Goodbye!")
                     break
 
                 if not user_input:
@@ -218,24 +218,24 @@ Remember: You're operating in a secure E2B sandbox, so you can safely execute co
                     else:
                         assistant_response = str(last_message)
 
-                    print(f"\n🤖 Agent: {assistant_response}\n")
+                    print(f"\nAgent: {assistant_response}\n")
                     conversation_messages.append(
                         {"role": "assistant", "content": assistant_response}
                     )
 
             except KeyboardInterrupt:
-                print("\n\n👋 Chat interrupted. Goodbye!")
+                print("\n\nChat interrupted. Goodbye!")
                 break
             except Exception as e:
-                print(f"\n❌ Error: {str(e)}\n")
+                print(f"\nError: {str(e)}\n")
 
     def close(self):
         """Clean up resources (close sandbox)."""
         if self.sandbox:
-            print("\n🧹 Closing E2B sandbox...")
+            print("\nClosing E2B sandbox...")
             # Note: E2B sandboxes auto-close after timeout
             # You can implement explicit cleanup if needed
-            print("  ✓ Resources cleaned up")
+            print("  Resources cleaned up")
 
     def __enter__(self):
         """Context manager entry."""

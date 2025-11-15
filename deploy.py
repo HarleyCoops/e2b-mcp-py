@@ -45,18 +45,18 @@ class DeepAgentServer:
         self.max_retries = max_retries
         self.agent: Optional[DeepAgentE2B] = None
 
-        print(f"📁 Log directory: {self.log_dir}")
-        print(f"📋 Task queue file: {self.task_queue_file}")
+        print(f"Log directory: {self.log_dir}")
+        print(f"Task queue file: {self.task_queue_file}")
 
     def initialize_agent(self):
         """Initialize or reinitialize the agent."""
-        print("🔄 Initializing agent...")
+        print("Initializing agent...")
         try:
             self.agent = DeepAgentE2B()
-            print("✅ Agent initialized successfully")
+            print("Agent initialized successfully")
             return True
         except Exception as e:
-            print(f"❌ Failed to initialize agent: {str(e)}")
+            print(f"Failed to initialize agent: {str(e)}")
             return False
 
     def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
@@ -102,8 +102,8 @@ class DeepAgentServer:
                     indent=2,
                 )
 
-            print(f"✅ Task {task_id} completed successfully")
-            print(f"📝 Log saved to: {log_file}")
+            print(f"Task {task_id} completed successfully")
+            print(f"Log saved to: {log_file}")
 
             return {
                 "task_id": task_id,
@@ -114,7 +114,7 @@ class DeepAgentServer:
 
         except Exception as e:
             error_msg = str(e)
-            print(f"❌ Task {task_id} failed: {error_msg}")
+            print(f"Task {task_id} failed: {error_msg}")
 
             # Log error
             with open(log_file, "w") as f:
@@ -146,7 +146,7 @@ class DeepAgentServer:
             with open(self.task_queue_file, "r") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"⚠ Error loading task queue: {str(e)}")
+            print(f"Error loading task queue: {str(e)}")
             return []
 
     def save_task_queue(self, tasks: list):
@@ -155,7 +155,7 @@ class DeepAgentServer:
             with open(self.task_queue_file, "w") as f:
                 json.dump(tasks, f, indent=2)
         except Exception as e:
-            print(f"⚠ Error saving task queue: {str(e)}")
+            print(f"Error saving task queue: {str(e)}")
 
     def run_server(self, poll_interval: int = 10):
         """
@@ -164,8 +164,8 @@ class DeepAgentServer:
         Args:
             poll_interval: Seconds between queue checks
         """
-        print("\n🚀 Starting Deep Agent Server")
-        print(f"⏱  Poll interval: {poll_interval} seconds")
+        print("\nStarting Deep Agent Server")
+        print(f"Poll interval: {poll_interval} seconds")
         print("Press Ctrl+C to stop\n")
 
         try:
@@ -174,7 +174,7 @@ class DeepAgentServer:
                 tasks = self.load_task_queue()
 
                 if tasks:
-                    print(f"📋 Found {len(tasks)} task(s) in queue")
+                    print(f"Found {len(tasks)} task(s) in queue")
 
                     # Process first task
                     task = tasks.pop(0)
@@ -187,13 +187,13 @@ class DeepAgentServer:
                     time.sleep(2)
                 else:
                     # No tasks, wait before checking again
-                    print(f"💤 No tasks in queue. Checking again in {poll_interval}s...")
+                    print(f"No tasks in queue. Checking again in {poll_interval}s...")
                     time.sleep(poll_interval)
 
         except KeyboardInterrupt:
-            print("\n\n🛑 Server stopped by user")
+            print("\n\nServer stopped by user")
         except Exception as e:
-            print(f"\n\n❌ Server error: {str(e)}")
+            print(f"\n\nServer error: {str(e)}")
         finally:
             if self.agent:
                 self.agent.close()
@@ -232,7 +232,7 @@ def deploy_single_task(task_description: str):
     result = server.run_single_task(task_description)
 
     print("\n" + "=" * 80)
-    print("📊 TASK RESULT")
+    print("TASK RESULT")
     print("=" * 80)
     print(json.dumps(result, indent=2))
 
@@ -258,8 +258,8 @@ def add_task_to_queue(task_description: str, task_id: Optional[str] = None):
     with open(queue_file, "w") as f:
         json.dump(tasks, f, indent=2)
 
-    print(f"✅ Task {task_id} added to queue")
-    print(f"📋 Queue now contains {len(tasks)} task(s)")
+    print(f"Task {task_id} added to queue")
+    print(f"Queue now contains {len(tasks)} task(s)")
 
 
 if __name__ == "__main__":
@@ -283,5 +283,5 @@ if __name__ == "__main__":
         task_desc = " ".join(sys.argv[2:])
         add_task_to_queue(task_desc)
     else:
-        print("❌ Invalid usage. See help above.")
+        print("Invalid usage. See help above.")
         sys.exit(1)

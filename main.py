@@ -10,7 +10,7 @@ from deep_agent import DeepAgentE2B
 
 def run_interactive():
     """Run the agent in interactive chat mode."""
-    print("🌟 Deep Agent E2B - Interactive Mode 🌟\n")
+    print("Deep Agent E2B - Interactive Mode\n")
 
     with DeepAgentE2B() as agent:
         agent.chat()
@@ -18,14 +18,14 @@ def run_interactive():
 
 def run_task(task: str):
     """Run a single task and exit."""
-    print("🌟 Deep Agent E2B - Task Mode 🌟\n")
+    print("Deep Agent E2B - Task Mode\n")
 
     with DeepAgentE2B() as agent:
         result = agent.invoke(task)
 
         # Print results
         print("\n" + "=" * 80)
-        print("📊 RESULTS")
+        print("RESULTS")
         print("=" * 80)
 
         if "messages" in result:

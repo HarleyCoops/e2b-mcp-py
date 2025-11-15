@@ -147,7 +147,7 @@ def run_all_examples():
         ("Multi-Step Workflow", example_multi_step_workflow),
     ]
 
-    print("🚀 Running all example tasks...\n")
+    print("Running all example tasks...\n")
 
     for name, example_func in examples:
         print(f"\n{'=' * 80}")
@@ -156,9 +156,9 @@ def run_all_examples():
 
         try:
             example_func()
-            print(f"\n✅ {name} completed successfully")
+            print(f"\n{name} completed successfully")
         except Exception as e:
-            print(f"\n❌ {name} failed: {str(e)}")
+            print(f"\n{name} failed: {str(e)}")
 
         print("\n")
 
