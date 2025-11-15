@@ -1,0 +1,9 @@
+# Code Style Rules
+
+## Emojis
+Never use emojis in any code, comments, documentation, commit messages, or output. Use plain text only.
+
+## General Guidelines
+- Write clear, concise documentation without decorative elements
+- Use plain text symbols and formatting instead of emojis
+- Keep all output professional and emoji-free

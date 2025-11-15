@@ -5,9 +5,9 @@ This module provides LangChain-compatible tools for interacting with E2B sandbox
 enabling deep agents to execute commands, manage files, and interact with MCP servers.
 """
 
-from typing import Any, Optional
 from langchain_core.tools import tool
 from e2b import Sandbox
+from e2b.exceptions import AuthenticationException
 
 
 class E2BSandboxTools:
@@ -23,6 +23,19 @@ class E2BSandboxTools:
             sandbox: An active E2B sandbox instance
         """
         self.sandbox = sandbox
+
+    def _with_auth_guard(self, operation: str, func):
+        """
+        Execute a sandbox call and raise a friendlier error on authentication issues.
+        """
+        try:
+            return func()
+        except AuthenticationException as exc:
+            sandbox_id = getattr(self.sandbox, "sandbox_id", "unknown")
+            raise RuntimeError(
+                f"E2B authentication failed while running '{operation}' in sandbox {sandbox_id}. "
+                "This usually means E2B_API_KEY is invalid, expired, or rate-limited."
+            ) from exc
 
     @staticmethod
     def create_tools(sandbox: Sandbox) -> list:
@@ -49,7 +62,10 @@ class E2BSandboxTools:
             Returns:
                 Dictionary with stdout, stderr, and exit_code
             """
-            result = tools_instance.sandbox.commands.run(command, timeout=timeout)
+            result = tools_instance._with_auth_guard(
+                "execute_sandbox_command",
+                lambda: tools_instance.sandbox.commands.run(command, timeout=timeout),
+            )
             return {
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -68,7 +84,10 @@ class E2BSandboxTools:
                 File contents as string
             """
             try:
-                content = tools_instance.sandbox.files.read(path)
+                content = tools_instance._with_auth_guard(
+                    "read_sandbox_file",
+                    lambda: tools_instance.sandbox.files.read(path),
+                )
                 if isinstance(content, bytes):
                     return content.decode("utf-8")
                 return content
@@ -88,7 +107,10 @@ class E2BSandboxTools:
                 Success message or error
             """
             try:
-                tools_instance.sandbox.files.write(path, content)
+                tools_instance._with_auth_guard(
+                    "write_sandbox_file",
+                    lambda: tools_instance.sandbox.files.write(path, content),
+                )
                 return f"Successfully wrote to {path}"
             except Exception as e:
                 return f"Error writing file: {str(e)}"
@@ -105,7 +127,10 @@ class E2BSandboxTools:
                 List of file and directory names
             """
             try:
-                result = tools_instance.sandbox.commands.run(f"ls -la {path}")
+                result = tools_instance._with_auth_guard(
+                    "list_sandbox_directory",
+                    lambda: tools_instance.sandbox.commands.run(f"ls -la {path}"),
+                )
                 return result.stdout.split("\n")
             except Exception as e:
                 return [f"Error listing directory: {str(e)}"]
@@ -127,8 +152,11 @@ class E2BSandboxTools:
             """
             # Use Claude CLI with MCP in the sandbox to execute GitHub actions
             command = f'echo "Use GitHub MCP to {action} {query}" | claude -p --dangerously-skip-permissions'
-            result = tools_instance.sandbox.commands.run(
-                command, timeout=120, envs={"MCP_TIMEOUT": "120000"}
+            result = tools_instance._with_auth_guard(
+                "execute_github_mcp_action",
+                lambda: tools_instance.sandbox.commands.run(
+                    command, timeout=120, envs={"MCP_TIMEOUT": "120000"}
+                ),
             )
             return {
                 "action": action,
@@ -154,8 +182,11 @@ class E2BSandboxTools:
             """
             # Use Claude CLI with MCP in the sandbox to execute Notion actions
             command = f'echo "Use Notion MCP to {action} {query}" | claude -p --dangerously-skip-permissions'
-            result = tools_instance.sandbox.commands.run(
-                command, timeout=120, envs={"MCP_TIMEOUT": "120000"}
+            result = tools_instance._with_auth_guard(
+                "execute_notion_mcp_action",
+                lambda: tools_instance.sandbox.commands.run(
+                    command, timeout=120, envs={"MCP_TIMEOUT": "120000"}
+                ),
             )
             return {
                 "action": action,
@@ -181,7 +212,10 @@ class E2BSandboxTools:
             else:
                 command = f"sudo apt-get update && sudo apt-get install -y {package}"
 
-            result = tools_instance.sandbox.commands.run(command, timeout=300)
+            result = tools_instance._with_auth_guard(
+                "install_sandbox_package",
+                lambda: tools_instance.sandbox.commands.run(command, timeout=300),
+            )
             return {
                 "package": package,
                 "stdout": result.stdout,
@@ -205,7 +239,10 @@ class E2BSandboxTools:
             }
 
             # Get system information
-            result = tools_instance.sandbox.commands.run("uname -a && pwd && whoami")
+            result = tools_instance._with_auth_guard(
+                "get_sandbox_info",
+                lambda: tools_instance.sandbox.commands.run("uname -a && pwd && whoami"),
+            )
             info["system_info"] = result.stdout
 
             return info

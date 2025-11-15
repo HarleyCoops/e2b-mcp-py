@@ -12,6 +12,7 @@ from deepagents import create_deep_agent
 from langchain_anthropic import ChatAnthropic
 from e2b import Sandbox
 from e2b.sandbox.mcp import GithubOfficial, Notion, McpServer
+from e2b.exceptions import AuthenticationException
 from e2b_tools import E2BSandboxTools
 
 dotenv.load_dotenv()
@@ -29,6 +30,7 @@ class DeepAgentE2B:
     def __init__(
         self,
         anthropic_api_key: Optional[str] = None,
+        e2b_api_key: Optional[str] = None,
         github_token: Optional[str] = None,
         notion_token: Optional[str] = None,
         model_name: str = "claude-sonnet-4-5-20250929",
@@ -48,6 +50,7 @@ class DeepAgentE2B:
         self.anthropic_api_key = anthropic_api_key or os.environ.get(
             "ANTHROPIC_API_KEY"
         )
+        self.e2b_api_key = e2b_api_key or os.environ.get("E2B_API_KEY")
         self.github_token = github_token or os.environ.get("GITHUB_TOKEN")
         self.notion_token = notion_token or os.environ.get("NOTION_TOKEN")
 
@@ -55,6 +58,8 @@ class DeepAgentE2B:
             raise ValueError(
                 "ANTHROPIC_API_KEY must be provided or set in environment"
             )
+        if not self.e2b_api_key:
+            raise ValueError("E2B_API_KEY must be provided or set in environment")
 
         self.model_name = model_name
         self.sandbox_timeout = sandbox_timeout
@@ -91,20 +96,33 @@ class DeepAgentE2B:
             print("  Warning: No MCP servers configured (no tokens provided)")
 
         # Create sandbox with environment variables and MCP servers
-        self.sandbox = Sandbox.beta_create(
-            envs={"ANTHROPIC_API_KEY": self.anthropic_api_key},
-            mcp=mcp_servers,
-            timeout=self.sandbox_timeout,
+        try:
+            self.sandbox = Sandbox.beta_create(
+                envs={"ANTHROPIC_API_KEY": self.anthropic_api_key},
+                mcp=mcp_servers,
+                timeout=self.sandbox_timeout,
+                api_key=self.e2b_api_key,
+            )
+        except AuthenticationException as exc:
+            raise RuntimeError(
+                "Failed to create E2B sandbox due to authentication error. "
+                "Confirm that E2B_API_KEY is valid and has not been revoked."
+            ) from exc
+
+        sandbox_id = getattr(self.sandbox, "sandbox_id", "unknown")
+        print(f"  Sandbox created (ID: {sandbox_id})")
+        print(
+            f"  E2B API key detected ({self._mask_secret(self.e2b_api_key)})"
         )
 
-        print(f"  Sandbox created (ID: {self.sandbox.id})")
+        self._verify_sandbox_command_channel()
 
         # Configure Claude CLI with MCP in the sandbox
         if mcp_servers:
             mcp_url = self.sandbox.beta_get_mcp_url()
             mcp_token = self.sandbox.beta_get_mcp_token()
 
-            result = self.sandbox.commands.run(
+            result = self._run_sandbox_command(
                 f'claude mcp add --transport http e2b-mcp-gateway {mcp_url} --header "Authorization: Bearer {mcp_token}"',
                 timeout=0,
             )
@@ -244,6 +262,39 @@ Remember: You're operating in a secure E2B sandbox, so you can safely execute co
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.close()
+
+    def _run_sandbox_command(self, command: str, timeout: int = 60):
+        """Run a sandbox command with authentication-aware error messaging."""
+        if not self.sandbox:
+            raise RuntimeError("Sandbox is not initialized")
+
+        try:
+            return self.sandbox.commands.run(command, timeout=timeout)
+        except AuthenticationException as exc:
+            raise RuntimeError(
+                "E2B authentication failed while executing a sandbox command. "
+                "This typically indicates the E2B_API_KEY is invalid, expired, or rate-limited."
+            ) from exc
+
+    def _verify_sandbox_command_channel(self):
+        """Ensure the sandbox command endpoint works before starting the agent."""
+        print("  Verifying sandbox command channel...")
+        result = self._run_sandbox_command("echo E2B_SANDBOX_OK")
+
+        if result.exit_code != 0:
+            raise RuntimeError(
+                "Sandbox command verification failed; inspect sandbox logs for details."
+            )
+        print("  Sandbox command channel verified")
+
+    @staticmethod
+    def _mask_secret(value: Optional[str]) -> str:
+        """Return a redacted preview of a secret."""
+        if not value:
+            return "<missing>"
+        if len(value) <= 8:
+            return f"{value[0]}***{value[-1]}"
+        return f"{value[:4]}...{value[-4:]}"
 
 
 def main():
