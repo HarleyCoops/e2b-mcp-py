@@ -24,92 +24,83 @@ Deep Agent E2B is a production-ready autonomous agent stack that fuses the deepa
 ### Visual Architecture
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#0a0e27','primaryTextColor':'#fff','primaryBorderColor':'#16213e','lineColor':'#0f3460','secondaryColor':'#1a1a2e','tertiaryColor':'#16213e','background':'#0a0e27','mainBkg':'#0a0e27','textColor':'#e94560','fontSize':'13px','fontFamily':'system-ui,-apple-system'}}}%%
-flowchart TB
-    %% Central Orchestration Hub
-    subgraph Core["`**CORE ORCHESTRATION**<br/>DeepAgentE2B + Claude Sonnet 4.5`"]
-        Agent["`**Agent Brain**<br/>Planning & Decision`"]
-        Planner["`**Planning Engine**<br/>Task Decomposition<br/>Iterative Refinement`"]
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#0a0e27','primaryTextColor':'#fff','primaryBorderColor':'#16213e','lineColor':'#0f3460','secondaryColor':'#1a1a2e','tertiaryColor':'#16213e','background':'#0a0e27','mainBkg':'#0a0e27','textColor':'#e94560','fontSize':'12px','fontFamily':'system-ui,-apple-system'}}}%%
+flowchart LR
+    %% Central Meta-Capability Hub - The Self-Extending Core
+    subgraph MetaCore["`**META-CAPABILITY CORE**<br/>Self-Extending Architecture`"]
+        direction TB
+        MCPBuilder["`**MCP Builder**<br/>scaffold_mcp_server<br/>add_mcp_tool<br/>deploy_mcp_server`"]
+        CustomMCP["`**Custom MCP Servers**<br/>Dynamically Built<br/>Runtime Extensions`"]
+        MCPBuilder -.->|"Builds"| CustomMCP
+        CustomMCP -.->|"Extends"| MCPBuilder
+    end
+
+    %% Orchestration Layer
+    subgraph Orchestration["`**ORCHESTRATION**<br/>DeepAgentE2B`"]
+        direction TB
+        Agent["`**Agent Brain**<br/>Claude Sonnet 4.5`"]
+        Planner["`**Planning Engine**<br/>Task Decomposition`"]
         Agent <--> Planner
     end
 
-    %% Input Layer - Multiple Entry Points
-    subgraph Input["`**INPUT INTERFACE**`"]
-        direction LR
-        CLI["`CLI<br/>main.py`"]
-        Queue["`Queue<br/>deploy.py`"]
-        API["`API<br/>Embedding`"]
-    end
-
-    %% Execution Layer - Sandbox Environment
-    subgraph Execution["`**EXECUTION ENVIRONMENT**<br/>E2B Isolated Sandbox`"]
+    %% Execution Environment
+    subgraph Execution["`**EXECUTION**<br/>E2B Sandbox`"]
         direction TB
-        E2B["`**E2B Sandbox**<br/>Cloud Linux VM`"]
-        
-        subgraph ToolRegistry["`**Tool Registry**<br/>E2BSandboxTools`"]
-            direction LR
-            SandboxOps["`Sandbox Ops<br/>Shell/File/Pkg`"]
-            MCPProxy["`MCP Proxy<br/>GitHub/Notion`"]
-            MCPBuilder["`**META BUILDER**<br/>Self-Extension`"]
-        end
-        
-        ToolRegistry --> E2B
+        E2B["`**E2B Sandbox**<br/>Isolated VM`"]
+        Tools["`**Tool Registry**<br/>LangChain Tools`"]
+        Tools --> E2B
     end
 
-    %% External Services - Connected via MCP
-    subgraph External["`**EXTERNAL INTEGRATIONS**`"]
-        direction LR
-        GitHub["`GitHub<br/>MCP Server`"]
-        Notion["`Notion<br/>MCP Server`"]
-        CustomMCP["`**Custom MCP**<br/>Agent-Built`"]
-        REST["`REST APIs<br/>Direct HTTP`"]
-    end
+    %% Input Sources
+    Input1["`CLI`"] --> Orchestration
+    Input2["`Queue`"] --> Orchestration
+    Input3["`API`"] --> Orchestration
 
-    %% Output & Observability
-    subgraph Output["`**OUTPUT & OBSERVABILITY**`"]
-        direction LR
-        Results["`Results<br/>JSON/Structured`"]
-        Logs["`Logs<br/>Per-Task JSON`"]
-        Metrics["`Metrics<br/>Performance`"]
-    end
+    %% Tool Categories
+    Tool1["`Sandbox Ops`"] --> Tools
+    Tool2["`MCP Proxy`"] --> Tools
+    Tool3["`Meta Builder`"] --> Tools
 
-    %% Primary Flow - Linear Pipeline
-    Input -->|"Task Input"| Core
-    Core -->|"Decompose & Plan"| Execution
-    Execution -->|"Execute Tools"| External
-    External -->|"API Responses"| Output
-    Output -->|"Feedback Loop"| Core
+    %% External Services
+    Ext1["`GitHub`"] --> E2B
+    Ext2["`Notion`"] --> E2B
+    Ext3["`Custom MCP`"] --> E2B
+    Ext4["`REST APIs`"] --> E2B
 
-    %% Meta-Capability Feedback - Self-Extension
-    MCPBuilder -.->|"1. Builds"| CustomMCP
-    CustomMCP -.->|"2. Extends"| ToolRegistry
-    ToolRegistry -.->|"3. Enables"| MCPBuilder
+    %% Output Destinations
+    E2B --> Output1["`Results`"]
+    E2B --> Output2["`Logs`"]
+    Orchestration --> Output3["`Metrics`"]
 
-    %% Internal Sandbox Flow
-    SandboxOps --> E2B
-    MCPProxy --> E2B
-    MCPBuilder --> E2B
+    %% Primary Flow
+    Orchestration -->|"Plan & Decompose"| Execution
+    Execution -->|"Execute"| Ext1
+    Execution -->|"Execute"| Ext2
+    Execution -->|"Execute"| Ext3
+    Execution -->|"Execute"| Ext4
 
-    %% External Connections
-    E2B -->|"MCP Gateway"| GitHub
-    E2B -->|"MCP Gateway"| Notion
-    E2B -->|"Custom MCP"| CustomMCP
-    E2B -->|"HTTP/API"| REST
+    %% Meta-Feedback Loops
+    MetaCore -.->|"Provides Tools"| Tool3
+    Tool3 -.->|"Uses"| MetaCore
+    Ext3 -.->|"Built By"| MetaCore
 
-    %% Styling - Dark theme with accent colors
-    classDef inputStyle fill:#16213e,stroke:#0f3460,stroke-width:2.5px,color:#fff
-    classDef coreStyle fill:#1a1a2e,stroke:#e94560,stroke-width:4px,color:#fff,font-weight:bold
-    classDef executionStyle fill:#0f3460,stroke:#16213e,stroke-width:3px,color:#fff
-    classDef metaStyle fill:#e94560,stroke:#fff,stroke-width:3.5px,color:#fff,font-weight:bold
-    classDef externalStyle fill:#16213e,stroke:#0f3460,stroke-width:2px,color:#fff
-    classDef outputStyle fill:#1a1a2e,stroke:#0f3460,stroke-width:2px,color:#fff
+    %% Feedback Loop
+    Output1 -.->|"Feedback"| Orchestration
 
-    class CLI,Queue,API inputStyle
-    class Agent,Planner coreStyle
-    class E2B,ToolRegistry,SandboxOps,MCPProxy executionStyle
-    class MCPBuilder,CustomMCP metaStyle
-    class GitHub,Notion,REST externalStyle
-    class Results,Logs,Metrics outputStyle
+    %% Styling
+    classDef metaCore fill:#e94560,stroke:#fff,stroke-width:4px,color:#fff,font-weight:bold
+    classDef orchestration fill:#1a1a2e,stroke:#e94560,stroke-width:3px,color:#fff,font-weight:bold
+    classDef execution fill:#0f3460,stroke:#16213e,stroke-width:3px,color:#fff
+    classDef input fill:#16213e,stroke:#0f3460,stroke-width:2px,color:#fff
+    classDef external fill:#16213e,stroke:#0f3460,stroke-width:2px,color:#fff
+    classDef output fill:#1a1a2e,stroke:#0f3460,stroke-width:2px,color:#fff
+
+    class MCPBuilder,CustomMCP metaCore
+    class Agent,Planner orchestration
+    class E2B,Tools,Tool1,Tool2,Tool3 execution
+    class Input1,Input2,Input3 input
+    class Ext1,Ext2,Ext3,Ext4 external
+    class Output1,Output2,Output3 output
 ```
 
 ### Deployment Surfaces
