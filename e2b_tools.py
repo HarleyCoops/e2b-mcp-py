@@ -198,7 +198,7 @@ class E2BSandboxTools:
                 Dictionary with sandbox details
             """
             info = {
-                "sandbox_id": tools_instance.sandbox.id,
+                "sandbox_id": getattr(tools_instance.sandbox, "sandbox_id", "unknown"),
                 "template": getattr(
                     tools_instance.sandbox, "template", "default"
                 ),
