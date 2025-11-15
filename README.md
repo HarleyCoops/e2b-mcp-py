@@ -250,7 +250,7 @@ logging.basicConfig(level=logging.DEBUG)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [uv package manager](https://docs.astral.sh/uv/)
 
-## MCP Server Builder
+## MCP Server Builder (Meta-Capabilities)
 
 The agent includes meta-capabilities to build its own MCP servers, enabling it to extend its functionality autonomously.
 
