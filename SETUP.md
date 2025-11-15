@@ -88,9 +88,9 @@ Expected output:
 ```
 Creating virtual environment at .venv
 Installing dependencies...
-✓ Installed e2b
-✓ Installed deepagents
-✓ Installed langchain
+OK Installed e2b
+OK Installed deepagents
+OK Installed langchain
 ...
 ```
 
@@ -121,7 +121,7 @@ uv run python -c "import deep_agent, e2b; print('Setup complete!')"
 ### 4.3 GitHub Personal Access Token
 
 1. Visit https://github.com/settings/tokens
-2. Click **Generate new token** → **Generate new token (classic)**
+2. Click **Generate new token** -> **Generate new token (classic)**
 3. Give it a descriptive name (e.g., "E2B Deep Agent")
 4. Set expiration (recommended: 90 days or custom)
 5. Select the following scopes:
@@ -198,14 +198,14 @@ missing = [name for name in required if not os.getenv(name)]
 if missing:
     print(f'Missing required keys: {missing}')
     exit(1)
-print('✓ All required keys are present')
-print(f'✓ Anthropic key: {os.getenv(\"ANTHROPIC_API_KEY\")[:20]}...')
-print(f'✓ E2B key: {os.getenv(\"E2B_API_KEY\")[:20]}...')
-print(f'✓ GitHub token: {os.getenv(\"GITHUB_TOKEN\")[:10]}...')
+print('OK All required keys are present')
+print(f'OK Anthropic key: {os.getenv(\"ANTHROPIC_API_KEY\")[:20]}...')
+print(f'OK E2B key: {os.getenv(\"E2B_API_KEY\")[:20]}...')
+print(f'OK GitHub token: {os.getenv(\"GITHUB_TOKEN\")[:10]}...')
 if os.getenv('NOTION_TOKEN'):
-    print(f'✓ Notion token: {os.getenv(\"NOTION_TOKEN\")[:10]}...')
+    print(f'OK Notion token: {os.getenv(\"NOTION_TOKEN\")[:10]}...')
 else:
-    print('ℹ Notion token not set (optional)')
+    print('INFO Notion token not set (optional)')
 "
 ```
 
@@ -220,14 +220,14 @@ missing = [name for name in required if not os.getenv(name)]
 if missing:
     print(f'Missing required keys: {missing}')
     exit(1)
-print('✓ All required keys are present')
-print(f'✓ Anthropic key: {os.getenv(\"ANTHROPIC_API_KEY\")[:20]}...')
-print(f'✓ E2B key: {os.getenv(\"E2B_API_KEY\")[:20]}...')
-print(f'✓ GitHub token: {os.getenv(\"GITHUB_TOKEN\")[:10]}...')
+print('OK All required keys are present')
+print(f'OK Anthropic key: {os.getenv(\"ANTHROPIC_API_KEY\")[:20]}...')
+print(f'OK E2B key: {os.getenv(\"E2B_API_KEY\")[:20]}...')
+print(f'OK GitHub token: {os.getenv(\"GITHUB_TOKEN\")[:10]}...')
 if os.getenv('NOTION_TOKEN'):
-    print(f'✓ Notion token: {os.getenv(\"NOTION_TOKEN\")[:10]}...')
+    print(f'OK Notion token: {os.getenv(\"NOTION_TOKEN\")[:10]}...')
 else:
-    print('ℹ Notion token not set (optional)')
+    print('INFO Notion token not set (optional)')
 "
 ```
 
@@ -236,7 +236,7 @@ else:
 ### Test 1: Basic Import Test
 
 ```bash
-uv run python -c "import deep_agent, e2b; print('✓ Imports successful')"
+uv run python -c "import deep_agent, e2b; print('OK Imports successful')"
 ```
 
 ### Test 2: Sandbox Creation Test
@@ -246,8 +246,8 @@ uv run python -c "
 from deep_agent import DeepAgentE2B
 print('Creating test sandbox...')
 with DeepAgentE2B(sandbox_timeout=60) as agent:
-    print('✓ Sandbox created successfully')
-    print('✓ Agent initialized')
+    print('OK Sandbox created successfully')
+    print('OK Agent initialized')
 "
 ```
 

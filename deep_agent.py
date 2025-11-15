@@ -5,11 +5,13 @@ This module implements a sophisticated autonomous agent using the deepagents fra
 integrated with E2B sandboxes for secure code execution and MCP server access.
 """
 
+import asyncio
 import os
 from typing import Optional
 import dotenv
 from deepagents import create_deep_agent
 from langchain_anthropic import ChatAnthropic
+from langchain_mcp_adapters.client import MultiServerMCPClient
 from e2b import Sandbox
 from e2b.sandbox.mcp import GithubOfficial, Notion, McpServer
 from e2b.exceptions import AuthenticationException
@@ -66,6 +68,7 @@ class DeepAgentE2B:
         self.sandbox: Optional[Sandbox] = None
         self.agent = None
         self.tools = []
+        self.mcp_client: Optional[MultiServerMCPClient] = None
 
         # Initialize components
         self._setup_sandbox()
@@ -117,24 +120,20 @@ class DeepAgentE2B:
 
         self._verify_sandbox_command_channel()
 
-        # Configure Claude CLI with MCP in the sandbox
+        # Create E2B-native tools
+        self.tools = E2BSandboxTools.create_tools(self.sandbox)
+        print(f"  Created {len(self.tools)} E2B sandbox tools")
+
+        # Configure Claude CLI + LangChain MCP adapters if servers were provided
         if mcp_servers:
             mcp_url = self.sandbox.beta_get_mcp_url()
             mcp_token = self.sandbox.beta_get_mcp_token()
 
-            result = self._run_sandbox_command(
-                f'claude mcp add --transport http e2b-mcp-gateway {mcp_url} --header "Authorization: Bearer {mcp_token}"',
-                timeout=0,
-            )
-
-            if result.exit_code == 0:
-                print("  Claude CLI configured with MCP gateway")
-            else:
-                print(f"  Warning: MCP gateway setup had issues: {result.stderr}")
-
-        # Create E2B tools for the agent
-        self.tools = E2BSandboxTools.create_tools(self.sandbox)
-        print(f"  Created {len(self.tools)} E2B sandbox tools")
+            self._configure_mcp_gateway(mcp_url, mcp_token)
+            mcp_langchain_tools = self._load_mcp_langchain_tools(mcp_url, mcp_token)
+            self.tools.extend(mcp_langchain_tools)
+        else:
+            print("  No MCP servers detected; MCP tools will not be added.")
 
     def _setup_agent(self):
         """Initialize the deep agent with custom tools and configuration."""
@@ -265,6 +264,9 @@ Remember: You're operating in a secure E2B sandbox, so you can safely execute co
             # Note: E2B sandboxes auto-close after timeout
             # You can implement explicit cleanup if needed
             print("  Resources cleaned up")
+        if self.mcp_client:
+            print("  Releasing MCP client")
+            self.mcp_client = None
 
     def __enter__(self):
         """Context manager entry."""
@@ -306,6 +308,52 @@ Remember: You're operating in a secure E2B sandbox, so you can safely execute co
         if len(value) <= 8:
             return f"{value[0]}***{value[-1]}"
         return f"{value[:4]}...{value[-4:]}"
+
+    def _configure_mcp_gateway(self, mcp_url: str, mcp_token: str):
+        """Register the sandbox MCP gateway with Claude CLI."""
+        print("  Configuring Claude CLI with MCP gateway...")
+        result = self._run_sandbox_command(
+            f'claude mcp add --transport http e2b-mcp-gateway {mcp_url} --header "Authorization: Bearer {mcp_token}"',
+            timeout=0,
+        )
+
+        if result.exit_code == 0:
+            print("  Claude CLI configured with MCP gateway")
+        else:
+            print(f"  Warning: MCP gateway setup had issues: {result.stderr}")
+
+    def _load_mcp_langchain_tools(self, mcp_url: str, mcp_token: str):
+        """
+        Use langchain-mcp-adapters so LangChain/LangGraph can observe native MCP tools.
+
+        Returns:
+            List of LangChain Tool instances backed by the E2B MCP gateway.
+        """
+        print("  Loading MCP tools via langchain-mcp-adapters...")
+        self.mcp_client = MultiServerMCPClient(
+            {
+                "e2b_mcp_gateway": {
+                    "transport": "streamable_http",
+                    "url": mcp_url,
+                    "headers": {"Authorization": f"Bearer {mcp_token}"},
+                }
+            }
+        )
+
+        try:
+            tools = asyncio.run(self.mcp_client.get_tools())
+            sync_tools = []
+            for tool in tools:
+                if getattr(tool, "is_async", False):
+                    sync_tools.append(tool.to_sync())
+                else:
+                    sync_tools.append(tool)
+            print(f"  Loaded {len(sync_tools)} MCP tools via langchain-mcp-adapters")
+            return sync_tools
+        except Exception as exc:
+            print(f"  Warning: Failed to load MCP tools: {exc}")
+            self.mcp_client = None
+            return []
 
 
 def main():

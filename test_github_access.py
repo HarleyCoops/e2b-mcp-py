@@ -6,7 +6,7 @@ print("GitHub Access Test")
 print("=" * 60)
 
 try:
-    with DeepAgentE2B(sandbox_timeout=120) as agent:
+    with DeepAgentE2B(sandbox_timeout=800) as agent:
         # Test 1: Get user info
         print("\n1. Testing GitHub user access...")
         result1 = agent.invoke("Use GitHub MCP to get my GitHub username and user information. Return the raw response.")

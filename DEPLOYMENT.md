@@ -7,43 +7,43 @@ This guide covers deployment strategies, pipeline architecture, and production c
 ### System Components
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Deployment Architecture                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────┐                                           │
-│  │   Client     │  (User/API/Scheduler)                     │
-│  └──────┬───────┘                                           │
-│         │                                                    │
-│         ├─── Interactive Mode ────┐                         │
-│         │                         │                         │
-│         ├─── Single Task Mode ────┤                         │
-│         │                         │                         │
-│         └─── Queue Mode ──────────┤                         │
-│                                   │                         │
-│                          ┌────────▼────────┐               │
-│                          │   deploy.py     │               │
-│                          │  (Orchestrator) │               │
-│                          └────────┬────────┘               │
-│                                   │                         │
-│                          ┌────────▼────────┐               │
-│                          │ DeepAgentServer │               │
-│                          │   (Manager)     │               │
-│                          └────────┬────────┘               │
-│                                   │                         │
-│                          ┌────────▼────────┐               │
-│                          │  DeepAgentE2B    │               │
-│                          │   (Core Agent)   │               │
-│                          └────────┬────────┘               │
-│                                   │                         │
-│                    ┌──────────────┴──────────────┐         │
-│                    │                             │         │
-│            ┌───────▼──────┐            ┌────────▼──────┐  │
-│            │ E2B Sandbox  │            │  File System  │  │
-│            │   (Cloud)   │            │  (Queue/Logs) │  │
-│            └──────────────┘            └───────────────┘  │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|                    Deployment Architecture                   |
++-------------------------------------------------------------+
+|                                                              |
+|  +--------------+                                           |
+|  |   Client     |  (User/API/Scheduler)                     |
+|  +------+-------+                                           |
+|         |                                                    |
+|         +--- Interactive Mode ----+                         |
+|         |                         |                         |
+|         +--- Single Task Mode ----+                         |
+|         |                         |                         |
+|         +--- Queue Mode ----------+                         |
+|                                   |                         |
+|                          +--------v--------+               |
+|                          |   deploy.py     |               |
+|                          |  (Orchestrator) |               |
+|                          +--------+--------+               |
+|                                   |                         |
+|                          +--------v--------+               |
+|                          | DeepAgentServer |               |
+|                          |   (Manager)     |               |
+|                          +--------+--------+               |
+|                                   |                         |
+|                          +--------v--------+               |
+|                          |  DeepAgentE2B    |               |
+|                          |   (Core Agent)   |               |
+|                          +--------+--------+               |
+|                                   |                         |
+|                    +--------------+--------------+         |
+|                    |                             |         |
+|            +-------v------+            +--------v------+  |
+|            | E2B Sandbox  |            |  File System  |  |
+|            |   (Cloud)   |            |  (Queue/Logs) |  |
+|            +--------------+            +---------------+  |
+|                                                              |
++-------------------------------------------------------------+
 ```
 
 ## Deployment Modes
@@ -66,7 +66,7 @@ uv run main.py
 
 **Flow:**
 ```
-User Input → Agent → Sandbox → Results → User
+User Input -> Agent -> Sandbox -> Results -> User
 ```
 
 ### Mode 2: Single Task Execution
@@ -87,7 +87,7 @@ uv run deploy.py task "Your task description"
 
 **Flow:**
 ```
-Task → Agent → Sandbox → Results → Log → Exit
+Task -> Agent -> Sandbox -> Results -> Log -> Exit
 ```
 
 ### Mode 3: Server Mode (Queue-Based)
@@ -114,11 +114,11 @@ uv run deploy.py queue "Task description"
 
 **Flow:**
 ```
-Server Start → Initialize Agent → Poll Queue
-    ↓
-Task Available? → Process Task → Log Results → Continue Polling
-    ↓
-No Tasks → Wait → Poll Again
+Server Start -> Initialize Agent -> Poll Queue
+    v
+Task Available? -> Process Task -> Log Results -> Continue Polling
+    v
+No Tasks -> Wait -> Poll Again
 ```
 
 ## Pipeline Flow
@@ -126,105 +126,105 @@ No Tasks → Wait → Poll Again
 ### Complete Execution Pipeline
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Task Execution Pipeline                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  1. Task Submission                                         │
-│     ├─ Interactive: User types in terminal                  │
-│     ├─ Single Task: Command line argument                  │
-│     └─ Queue: Written to /tmp/deep_agent_queue.json        │
-│                                                              │
-│  2. Agent Initialization                                    │
-│     ├─ Load environment variables                           │
-│     ├─ Create E2B sandbox                                   │
-│     │   ├─ Configure MCP servers (GitHub, Notion)          │
-│     │   ├─ Set environment variables                       │
-│     │   └─ Get sandbox ID                                  │
-│     ├─ Configure Claude CLI in sandbox                      │
-│     │   ├─ Get MCP gateway URL                              │
-│     │   ├─ Get MCP token                                    │
-│     │   └─ Run: claude mcp add ...                         │
-│     ├─ Create E2B tools (LangChain)                        │
-│     └─ Initialize deep agent                               │
-│                                                              │
-│  3. Task Processing                                         │
-│     ├─ Agent receives task                                  │
-│     ├─ Planning phase                                       │
-│     │   ├─ Task decomposition (write_todos)                 │
-│     │   └─ Step-by-step plan creation                      │
-│     ├─ Execution phase                                      │
-│     │   ├─ Tool selection                                   │
-│     │   ├─ Tool execution                                  │
-│     │   │   ├─ Sandbox commands                            │
-│     │   │   ├─ File operations                             │
-│     │   │   ├─ MCP actions (GitHub/Notion)                 │
-│     │   │   └─ Package installation                        │
-│     │   └─ Result collection                               │
-│     └─ Synthesis phase                                      │
-│         ├─ Result aggregation                               │
-│         └─ Response generation                               │
-│                                                              │
-│  4. Result Handling                                         │
-│     ├─ Interactive: Display to user                         │
-│     ├─ Single Task: Print and exit                         │
-│     └─ Server Mode: Log to file                            │
-│                                                              │
-│  5. Cleanup                                                 │
-│     ├─ Close sandbox (or timeout)                          │
-│     ├─ Save logs                                            │
-│     └─ Update queue (if server mode)                      │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|                    Task Execution Pipeline                   |
++-------------------------------------------------------------+
+|                                                              |
+|  1. Task Submission                                         |
+|     +- Interactive: User types in terminal                  |
+|     +- Single Task: Command line argument                  |
+|     +- Queue: Written to /tmp/deep_agent_queue.json        |
+|                                                              |
+|  2. Agent Initialization                                    |
+|     +- Load environment variables                           |
+|     +- Create E2B sandbox                                   |
+|     |   +- Configure MCP servers (GitHub, Notion)          |
+|     |   +- Set environment variables                       |
+|     |   +- Get sandbox ID                                  |
+|     +- Configure Claude CLI in sandbox                      |
+|     |   +- Get MCP gateway URL                              |
+|     |   +- Get MCP token                                    |
+|     |   +- Run: claude mcp add ...                         |
+|     +- Create E2B tools (LangChain)                        |
+|     +- Initialize deep agent                               |
+|                                                              |
+|  3. Task Processing                                         |
+|     +- Agent receives task                                  |
+|     +- Planning phase                                       |
+|     |   +- Task decomposition (write_todos)                 |
+|     |   +- Step-by-step plan creation                      |
+|     +- Execution phase                                      |
+|     |   +- Tool selection                                   |
+|     |   +- Tool execution                                  |
+|     |   |   +- Sandbox commands                            |
+|     |   |   +- File operations                             |
+|     |   |   +- MCP actions (GitHub/Notion)                 |
+|     |   |   +- Package installation                        |
+|     |   +- Result collection                               |
+|     +- Synthesis phase                                      |
+|         +- Result aggregation                               |
+|         +- Response generation                               |
+|                                                              |
+|  4. Result Handling                                         |
+|     +- Interactive: Display to user                         |
+|     +- Single Task: Print and exit                         |
+|     +- Server Mode: Log to file                            |
+|                                                              |
+|  5. Cleanup                                                 |
+|     +- Close sandbox (or timeout)                          |
+|     +- Save logs                                            |
+|     +- Update queue (if server mode)                      |
+|                                                              |
++-------------------------------------------------------------+
 ```
 
 ### Server Mode Pipeline Detail
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              Server Mode Detailed Pipeline                  │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  START                                                       │
-│    │                                                         │
-│    ├─> Initialize DeepAgentServer                           │
-│    │   ├─ Create log directory                              │
-│    │   ├─ Check queue file                                  │
-│    │   └─ Set retry configuration                           │
-│    │                                                         │
-│    ├─> Initialize Agent (lazy)                              │
-│    │   ├─ Create sandbox                                    │
-│    │   ├─ Configure MCP                                     │
-│    │   └─ Setup tools                                       │
-│    │                                                         │
-│    └─> Enter Main Loop                                      │
-│        │                                                     │
-│        ├─> Poll Queue (every 10s)                           │
-│        │   └─> Read /tmp/deep_agent_queue.json             │
-│        │                                                     │
-│        ├─> Queue Empty?                                     │
-│        │   ├─ Yes → Wait → Poll Again                      │
-│        │   └─ No → Continue                                │
-│        │                                                     │
-│        ├─> Get First Task                                  │
-│        │   └─> Remove from queue                           │
-│        │                                                     │
-│        ├─> Process Task                                     │
-│        │   ├─> Ensure agent initialized                    │
-│        │   ├─> Execute task                                │
-│        │   ├─> Handle errors                               │
-│        │   └─> Log results                                 │
-│        │                                                     │
-│        ├─> Save Updated Queue                               │
-│        │                                                     │
-│        └─> Continue Loop                                    │
-│                                                              │
-│  STOP (Ctrl+C or error)                                     │
-│    ├─> Close agent                                          │
-│    ├─> Close sandbox                                        │
-│    └─> Exit                                                 │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|              Server Mode Detailed Pipeline                  |
++-------------------------------------------------------------+
+|                                                              |
+|  START                                                       |
+|    |                                                         |
+|    +-> Initialize DeepAgentServer                           |
+|    |   +- Create log directory                              |
+|    |   +- Check queue file                                  |
+|    |   +- Set retry configuration                           |
+|    |                                                         |
+|    +-> Initialize Agent (lazy)                              |
+|    |   +- Create sandbox                                    |
+|    |   +- Configure MCP                                     |
+|    |   +- Setup tools                                       |
+|    |                                                         |
+|    +-> Enter Main Loop                                      |
+|        |                                                     |
+|        +-> Poll Queue (every 10s)                           |
+|        |   +-> Read /tmp/deep_agent_queue.json             |
+|        |                                                     |
+|        +-> Queue Empty?                                     |
+|        |   +- Yes -> Wait -> Poll Again                      |
+|        |   +- No -> Continue                                |
+|        |                                                     |
+|        +-> Get First Task                                  |
+|        |   +-> Remove from queue                           |
+|        |                                                     |
+|        +-> Process Task                                     |
+|        |   +-> Ensure agent initialized                    |
+|        |   +-> Execute task                                |
+|        |   +-> Handle errors                               |
+|        |   +-> Log results                                 |
+|        |                                                     |
+|        +-> Save Updated Queue                               |
+|        |                                                     |
+|        +-> Continue Loop                                    |
+|                                                              |
+|  STOP (Ctrl+C or error)                                     |
+|    +-> Close agent                                          |
+|    +-> Close sandbox                                        |
+|    +-> Exit                                                 |
+|                                                              |
++-------------------------------------------------------------+
 ```
 
 ## Production Deployment
