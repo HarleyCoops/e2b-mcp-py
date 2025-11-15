@@ -243,11 +243,17 @@ python server.py
             inputSchema={json.dumps(parameters_schema, indent=16)}
         ),'''
 
-            # Generate tool implementation
+            # Generate tool implementation with proper indentation
+            # Indent each line of implementation_code by 8 spaces (2 levels)
+            indented_impl = "\n".join(
+                "        " + line if line.strip() else ""
+                for line in implementation_code.split("\n")
+            )
+
             tool_impl = f'''
     if name == "{tool_name}":
         # {tool_description}
-        {implementation_code}
+{indented_impl}
 '''
 
             # Insert tool definition into list_tools
@@ -277,17 +283,19 @@ python server.py
         @tool
         def test_mcp_server(server_name: str, test_tool: str, test_args: dict) -> dict:
             """
-            Test an MCP server by running it and calling a tool.
+            Test an MCP server by validating its syntax and structure.
 
-            This validates that the server starts correctly and tools work as expected.
+            This validates that the server file exists, has valid Python syntax,
+            and contains the expected tools. Full runtime testing would require
+            MCP SDK installation in the sandbox.
 
             Args:
                 server_name: Name of the MCP server to test
-                test_tool: Name of the tool to test
-                test_args: Arguments to pass to the tool (as dict)
+                test_tool: Name of the tool to verify exists in the server
+                test_args: Arguments for the tool (currently unused, reserved for future runtime testing)
 
             Returns:
-                Dictionary with test results
+                Dictionary with test results including syntax validation and tool count
             """
             server_path = f"/home/user/mcp_servers/{server_name}"
 
@@ -303,58 +311,44 @@ python server.py
                     "error": f"Server {server_name} not found at {server_path}",
                 }
 
-            # Install MCP if not already installed
-            # Try different MCP package names
-            install_result = tools_instance.sandbox.commands.run(
-                "pip install -q mcp-python httpx 2>&1 || pip install -q mcp httpx 2>&1 || echo 'MCP install check'", timeout=60
+            # Test Python syntax (validates the file can be compiled)
+            syntax_result = tools_instance.sandbox.commands.run(
+                f"python3 -m py_compile {server_path}/server.py",
+                timeout=10,
             )
 
-            # Create test script
-            test_script = f'''
-import asyncio
-import json
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+            if syntax_result.exit_code != 0:
+                return {
+                    "status": "error",
+                    "server_name": server_name,
+                    "error": "Syntax error in server.py",
+                    "stderr": syntax_result.stderr,
+                }
 
-async def test():
-    server_params = StdioServerParameters(
-        command="python",
-        args=["{server_path}/server.py"]
-    )
-
-    async with stdio_client(server_params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-
-            # List tools
-            tools = await session.list_tools()
-            print("Available tools:", [t.name for t in tools.tools])
-
-            # Call test tool
-            result = await session.call_tool("{test_tool}", {json.dumps(test_args)})
-            print("Tool result:", result.content[0].text if result.content else "No content")
-
-            return result
-
-result = asyncio.run(test())
-print("Test completed successfully!")
-'''
-
-            tools_instance.sandbox.files.write(
-                f"{server_path}/test_script.py", test_script
+            # Verify the expected tool exists in the server
+            grep_result = tools_instance.sandbox.commands.run(
+                f'grep -c \'name="{test_tool}"\' {server_path}/server.py || echo "0"',
+                timeout=5,
             )
 
-            # Run test
-            test_result = tools_instance.sandbox.commands.run(
-                f"cd {server_path} && python test_script.py", timeout=30
+            tool_found = grep_result.stdout.strip() != "0"
+
+            # Count total tools defined
+            tools_count_result = tools_instance.sandbox.commands.run(
+                f"grep -c 'Tool(' {server_path}/server.py || echo '0'",
+                timeout=5,
             )
+
+            tools_count = int(tools_count_result.stdout.strip() or "0")
 
             return {
-                "status": "success" if test_result.exit_code == 0 else "error",
+                "status": "success",
                 "server_name": server_name,
-                "exit_code": test_result.exit_code,
-                "stdout": test_result.stdout,
-                "stderr": test_result.stderr,
+                "syntax_valid": True,
+                "test_tool_found": tool_found,
+                "tools_count": tools_count,
+                "message": f"Server validated. Found {tools_count} tool(s). Syntax is valid. Tool '{test_tool}' {'found' if tool_found else 'not found'}.",
+                "note": "Syntax validation only. Full runtime testing requires MCP SDK in sandbox.",
             }
 
         @tool

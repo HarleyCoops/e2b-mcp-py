@@ -16,6 +16,7 @@ from e2b import Sandbox
 from e2b.sandbox.mcp import GithubOfficial, Notion, McpServer
 from e2b.exceptions import AuthenticationException
 from e2b_tools import E2BSandboxTools
+from mcp_builder_tools import MCPBuilderTools
 
 dotenv.load_dotenv()
 
@@ -124,6 +125,11 @@ class DeepAgentE2B:
         self.tools = E2BSandboxTools.create_tools(self.sandbox)
         print(f"  Created {len(self.tools)} E2B sandbox tools")
 
+        # Add MCP builder tools for self-extension capabilities
+        mcp_builder_tools = MCPBuilderTools.create_tools(self.sandbox)
+        self.tools.extend(mcp_builder_tools)
+        print(f"  Added {len(mcp_builder_tools)} MCP builder tools")
+
         # Configure Claude CLI + LangChain MCP adapters if servers were provided
         if mcp_servers:
             mcp_url = self.sandbox.beta_get_mcp_url()
@@ -161,6 +167,12 @@ You have the following capabilities:
 4. **Notion Integration**: Create pages, search databases, and organize information via the Notion MCP server
 5. **File System Management**: Read, write, and organize files both locally and in the sandbox
 6. **Subagent Spawning**: Delegate specialized tasks to focused subagents when needed
+7. **MCP Server Building**: Build custom MCP servers to extend your own capabilities
+   - Use 'scaffold_mcp_server' to create new integration scaffolds
+   - Use 'add_mcp_tool_to_server' to add tools to MCP servers
+   - Use 'test_mcp_server' to validate MCP servers before deployment
+   - Use 'deploy_mcp_server' to make new integrations available
+   - Use 'list_mcp_servers' to see all built MCP servers
 
 Your workflow should be:
 1. Understand the user's request thoroughly

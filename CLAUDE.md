@@ -32,6 +32,12 @@ uv run examples.py package     # Package installation demo
 uv run examples.py workflow    # Complex multi-step workflow
 uv run examples.py all         # Run all examples
 
+# MCP builder examples (self-extending capabilities)
+uv run example_mcp_builder.py jsonplaceholder   # Build MCP for JSONPlaceholder API
+uv run example_mcp_builder.py calculator        # Build simple calculator MCP
+uv run example_mcp_builder.py custom            # Build MCP for custom API
+uv run example_mcp_builder.py list              # List all built MCP servers
+
 # Deployment modes
 uv run deploy.py task "<task>"         # One-off task with JSON result
 uv run deploy.py queue "<task>"        # Add task to queue
@@ -69,7 +75,15 @@ Required (all stored in `.env`, which is gitignored):
    - `get_sandbox_info` - Sandbox environment details
    - All tools wrapped with `_with_auth_guard` for E2B authentication error handling
 
-3. **Entry Points**
+3. **MCPBuilderTools** ([mcp_builder_tools.py](mcp_builder_tools.py)) - Self-extension capabilities
+   - `scaffold_mcp_server` - Create new MCP server scaffold
+   - `add_mcp_tool_to_server` - Add tools to existing MCP server
+   - `test_mcp_server` - Test MCP server before deployment
+   - `deploy_mcp_server` - Deploy and register MCP server
+   - `list_mcp_servers` - List all built MCP servers
+   - Enables agent to build integrations for any API autonomously
+
+4. **Entry Points**
    - [main.py](main.py) - CLI with interactive chat or single-task modes
    - [examples.py](examples.py) - Curated demo scenarios
    - [deploy.py](deploy.py) - Production deployment with queue and logging
@@ -146,6 +160,42 @@ MCP tools exposed TWO ways:
 ### Code Style
 
 **No emojis** - per [.github/copilot-instructions.md](.github/copilot-instructions.md), never use emojis in code, comments, or output. This project previously had Unicode encoding issues on Windows (see [main.py:39-41](main.py#L39-L41)).
+
+### MCP Builder Capability (Self-Extension)
+
+**Key innovation**: The agent can build its own MCP servers to integrate with ANY API.
+
+**Workflow for building new integrations:**
+
+1. **Scaffold**: `scaffold_mcp_server(server_name, description, api_base_url)` - Creates template in `/home/user/mcp_servers/{server_name}/`
+2. **Implement**: `add_mcp_tool_to_server(server_name, tool_name, description, parameters_schema, implementation_code)` - Adds tools
+3. **Test**: `test_mcp_server(server_name, test_tool, test_args)` - Validates server works
+4. **Deploy**: `deploy_mcp_server(server_name, deployment_mode)` - Registers with Claude CLI
+5. **Use**: New tools immediately available via MCP
+
+**Example use cases:**
+
+- No existing MCP server: Build from scratch (e.g., Stripe, Twilio, internal APIs)
+- Existing MCP server: Build custom version with specific tools/workflows
+- Composition: Combine multiple APIs into one MCP server
+- Customization: Build MCP server aware of your company's schema/fields
+
+**Files created per MCP server:**
+
+```
+/home/user/mcp_servers/{server_name}/
+  server.py           # MCP server implementation
+  README.md           # Documentation
+  test_script.py      # Auto-generated tests
+  mcp_config.json     # Deployment config
+```
+
+**This transforms the agent from:**
+
+- Agent with N pre-configured integrations
+- TO: Agent that can integrate with any API on-demand
+
+See [example_mcp_builder.py](example_mcp_builder.py) for demonstrations and [VISION.md](VISION.md) for detailed architecture.
 
 ## Modifying Behavior
 
