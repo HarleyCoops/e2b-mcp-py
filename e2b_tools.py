@@ -66,9 +66,32 @@ class E2BSandboxTools:
                 "execute_sandbox_command",
                 lambda: tools_instance.sandbox.commands.run(command, timeout=timeout),
             )
+            
+            # Enhanced error detection for common issues
+            stderr = result.stderr or ""
+            stdout = result.stdout or ""
+            
+            # Check for division by zero errors
+            if "ZeroDivisionError" in stderr or "ZeroDivisionError" in stdout:
+                return {
+                    "stdout": stdout,
+                    "stderr": stderr + "\n[ERROR DETECTED] ZeroDivisionError: Division by zero occurred. This often happens when computing ratios with empty datasets. Check if your data source returned any results before performing division operations.",
+                    "exit_code": result.exit_code,
+                    "error_type": "ZeroDivisionError",
+                }
+            
+            # Check for empty result patterns
+            if result.exit_code != 0 and ("empty" in stderr.lower() or "no data" in stderr.lower()):
+                return {
+                    "stdout": stdout,
+                    "stderr": stderr + "\n[WARNING] Empty dataset detected. Verify that your data source (GitHub MCP, Notion MCP, etc.) returned results and that you have proper permissions/scopes.",
+                    "exit_code": result.exit_code,
+                    "error_type": "EmptyDataset",
+                }
+            
             return {
-                "stdout": result.stdout,
-                "stderr": result.stderr,
+                "stdout": stdout,
+                "stderr": stderr,
                 "exit_code": result.exit_code,
             }
 
@@ -141,17 +164,33 @@ class E2BSandboxTools:
             Execute a GitHub MCP server action through the sandbox.
 
             This tool interacts with the GitHub MCP server configured in the sandbox
-            to perform GitHub operations like listing repos, creating issues, etc.
+            to perform GitHub operations.
 
+            IMPORTANT: GitHub MCP uses specific tool names. Common actions:
+            - 'get_me' - Get current user info (no query needed)
+            - 'search_repositories' - Search repos (query format: 'user:username' or 'org:orgname')
+            - 'get_repository' - Get specific repo info (query: 'owner/repo')
+            - 'get_commit' - Get commit info (query: 'owner/repo/commit_sha')
+            - 'list_issues' - List issues (query: 'owner/repo')
+            
+            To list YOUR repositories:
+            1. First use 'get_me' to get your username
+            2. Then use 'search_repositories' with query 'user:YOUR_USERNAME'
+            
             Args:
-                action: The GitHub action to perform (e.g., 'list_repos', 'get_repo_info')
-                query: Additional query parameters or repository name
+                action: The GitHub MCP tool name (e.g., 'search_repositories', 'get_me', 'get_repository')
+                query: Query parameters (e.g., 'user:HarleyCoops' for search_repositories, 'owner/repo' for get_repository)
 
             Returns:
                 Dictionary with action results
             """
             # Use Claude CLI with MCP in the sandbox to execute GitHub actions
-            command = f'echo "Use GitHub MCP to {action} {query}" | claude -p --dangerously-skip-permissions'
+            # Format the command to use the correct GitHub MCP tool
+            if query:
+                command = f'echo "Use GitHub MCP tool {action} with query: {query}" | claude -p --dangerously-skip-permissions'
+            else:
+                command = f'echo "Use GitHub MCP tool {action}" | claude -p --dangerously-skip-permissions'
+            
             result = tools_instance._with_auth_guard(
                 "execute_github_mcp_action",
                 lambda: tools_instance.sandbox.commands.run(

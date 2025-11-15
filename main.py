@@ -31,7 +31,14 @@ def run_task(task: str):
         if "messages" in result:
             for msg in result["messages"]:
                 if hasattr(msg, "content"):
-                    print(f"\n{msg.content}")
+                    # Handle Unicode encoding for Windows console
+                    content = str(msg.content)
+                    try:
+                        print(f"\n{content}")
+                    except UnicodeEncodeError:
+                        # Strip emojis and non-ASCII characters for Windows console
+                        safe_content = content.encode('ascii', 'ignore').decode('ascii')
+                        print(f"\n{safe_content}")
                 else:
                     print(f"\n{msg}")
 

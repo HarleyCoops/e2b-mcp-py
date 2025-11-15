@@ -125,9 +125,9 @@ uv run python -c "import deep_agent, e2b; print('Setup complete!')"
 3. Give it a descriptive name (e.g., "E2B Deep Agent")
 4. Set expiration (recommended: 90 days or custom)
 5. Select the following scopes:
-   - ✅ `repo` (Full control of private repositories)
-   - ✅ `read:user` (Read user profile data)
-   - ✅ `read:org` (Read org and team membership)
+   - [x] `repo` (Full control of private repositories)
+   - [x] `read:user` (Read user profile data)
+   - [x] `read:org` (Read org and team membership)
 6. Click **Generate token**
 7. Copy the token (starts with `ghp_`)
 8. **Important**: Save it immediately - you won't be able to see it again
@@ -366,5 +366,5 @@ If you encounter issues:
 
 ---
 
-Congratulations! Your Deep Agent E2B setup is complete. 🎉
+Congratulations! Your Deep Agent E2B setup is complete.
 
