@@ -244,11 +244,20 @@ python server.py
         ),'''
 
             # Generate tool implementation with proper indentation
-            # Indent each line of implementation_code by 8 spaces (2 levels)
-            indented_impl = "\n".join(
-                "        " + line if line.strip() else ""
-                for line in implementation_code.split("\n")
-            )
+            # First, normalize the implementation code by removing common leading whitespace
+            impl_lines = implementation_code.split("\n")
+            # Filter out empty lines for finding minimum indentation
+            non_empty_lines = [line for line in impl_lines if line.strip()]
+            if non_empty_lines:
+                # Find minimum indentation
+                min_indent = min(len(line) - len(line.lstrip()) for line in non_empty_lines)
+                # Remove that baseline indentation and add our target indentation (8 spaces)
+                indented_impl = "\n".join(
+                    "        " + line[min_indent:] if line.strip() else ""
+                    for line in impl_lines
+                )
+            else:
+                indented_impl = ""
 
             tool_impl = f'''
     if name == "{tool_name}":
