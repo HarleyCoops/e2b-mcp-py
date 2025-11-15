@@ -65,38 +65,38 @@ def main() -> int:
         )
     except AuthenticationException as exc:
         print(
-            "❌ Failed to create sandbox due to E2B authentication error. "
+            "ERROR: Failed to create sandbox due to E2B authentication error. "
             "Double-check E2B_API_KEY in .env."
         )
         print(f"Details: {exc}")
         return 2
     except SandboxException as exc:
-        print("❌ Sandbox creation failed due to a sandbox error.")
+        print("ERROR: Sandbox creation failed due to a sandbox error.")
         print(f"Details: {exc}")
         return 2
 
-    print(f"✅ Sandbox created: {sandbox.sandbox_id}")
+    print(f"Sandbox created: {sandbox.sandbox_id}")
 
     print("Running command-channel health check...")
     try:
         result = sandbox.commands.run("echo CHECK_SANDBOX", timeout=30)
     except AuthenticationException as exc:
         print(
-            "❌ Sandbox command channel rejected the API key (invalid x-api-key). "
+            "ERROR: Sandbox command channel rejected the API key (invalid x-api-key). "
             "Update the E2B_API_KEY and re-run this script."
         )
         print(f"Details: {exc}")
         return 3
     except SandboxException as exc:
-        print("❌ Sandbox command failed.")
+        print("ERROR: Sandbox command failed.")
         print(f"Details: {exc}")
         return 3
     else:
         if result.exit_code == 0:
-            print("✅ Command channel looks healthy.")
+            print("Command channel looks healthy.")
         else:
             print(
-                f"⚠️ Command channel returned exit code {result.exit_code}. "
+                f"WARNING: Command channel returned exit code {result.exit_code}. "
                 "Check sandbox stdout/stderr for details."
             )
             print(result.stderr)
