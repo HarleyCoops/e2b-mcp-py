@@ -97,7 +97,7 @@ class DeepAgentE2B:
             timeout=self.sandbox_timeout,
         )
 
-        print(f"  ✓ Sandbox created (ID: {self.sandbox.id})")
+        print(f"  ✓ Sandbox created successfully")
 
         # Configure Claude CLI with MCP in the sandbox
         if mcp_servers:
