@@ -7,6 +7,7 @@ Deep Agent E2B is a production-ready autonomous agent stack that fuses the deepa
 - Autonomous planning powered by LangChain deepagents and Claude Sonnet 4.5
 - Secure E2B sandboxes with built-in shell, file, and package management tools
 - First-class MCP integrations (GitHub Official plus Notion) for repo insights and documentation
+- Meta MCP Server Builder - the agent can build custom MCP servers to extend its own capabilities
 - Deployment-ready server (deploy.py) supporting queue-based workloads and structured logs
 - Fully pinned environment via uv.lock for reproducible installs
 
@@ -16,21 +17,21 @@ Deep Agent E2B is a production-ready autonomous agent stack that fuses the deepa
 
 1. Entry point - CLI (main.py, examples.py) or service wrapper (deploy.py) receives a task.
 2. Agent bootstrap - DeepAgentE2B loads secrets, spins up an E2B sandbox, and attaches MCP servers based on available tokens.
-3. Tool wiring - E2BSandboxTools exposes sandbox commands, file IO, package installs, and MCP proxy tools to the agent runtime.
-4. Planning and execution - The deep agent decomposes the task, calls tools inside the sandbox, and iterates until completion.
+3. Tool wiring - E2BSandboxTools exposes sandbox commands, file IO, package installs, MCP proxy tools, and MCP builder tools to the agent runtime.
+4. Planning and execution - The deep agent decomposes the task, calls tools inside the sandbox, and iterates until completion. Can even build new MCP servers to extend capabilities.
 5. Results and logging - Structured responses stream back to the CLI or server, while deploy.py persists JSON logs per task.
 
 ```
 Command / Queue / API
-        ?
+        |
 DeepAgentE2B (Claude + deepagents)
-        ?
+        |
 E2BSandboxTools (LangChain tools)
-        ?
+        |
 E2B Sandbox (shell / files / MCP gateway)
-        ?
-GitHub / Notion / External APIs
-        ?
+        |
+GitHub / Notion / Custom MCP Servers / External APIs
+        |
 Response + Logs
 ```
 
@@ -142,6 +143,29 @@ uv run examples.py workflow    # Complex multi-step automation
 uv run examples.py all         # Run every example sequentially
 ```
 
+### MCP Server Builder
+
+The agent can autonomously build custom MCP servers to extend its capabilities:
+
+```bash
+uv run example_mcp_builder.py jsonplaceholder
+```
+
+This demonstrates the agent building a complete MCP server for the JSONPlaceholder API, including:
+- Scaffolding the server structure
+- Adding custom tools for API endpoints
+- Testing and validating the server
+- Deploying it for use
+
+The MCP builder tools enable the agent to:
+- `scaffold_mcp_server` - Create a new MCP server template
+- `add_mcp_tool_to_server` - Add custom tools to an existing server
+- `test_mcp_server` - Validate server syntax and structure
+- `deploy_mcp_server` - Deploy the server for use
+- `list_mcp_servers` - List all built servers
+
+Built servers are stored in `/home/user/mcp_servers/` within the sandbox and can be integrated with Claude CLI.
+
 ### Embedding in Your Own Python
 
 ```python
@@ -226,9 +250,66 @@ logging.basicConfig(level=logging.DEBUG)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [uv package manager](https://docs.astral.sh/uv/)
 
+## MCP Server Builder
+
+The agent includes meta-capabilities to build its own MCP servers, enabling it to extend its functionality autonomously.
+
+### Building Custom MCP Servers
+
+The agent can scaffold, implement, test, and deploy custom MCP servers for any API or service:
+
+```python
+from deep_agent import DeepAgentE2B
+
+with DeepAgentE2B() as agent:
+    task = """
+    Build an MCP server for the JSONPlaceholder API:
+    1. Scaffold a server named 'jsonplaceholder'
+    2. Add tools: get_posts, get_post, get_user
+    3. Test the server syntax
+    4. Deploy it locally
+    """
+    result = agent.invoke(task)
+```
+
+### Available Builder Tools
+
+- **scaffold_mcp_server** - Creates a complete MCP server template with proper structure
+- **add_mcp_tool_to_server** - Adds custom tools with implementations to an existing server
+- **test_mcp_server** - Validates server syntax and verifies tools exist
+- **deploy_mcp_server** - Deploys the server for use with Claude CLI
+- **list_mcp_servers** - Lists all built servers and their details
+
+### Example: JSONPlaceholder MCP Server
+
+```bash
+uv run example_mcp_builder.py jsonplaceholder
+```
+
+This example demonstrates building a complete MCP server with three tools:
+- `get_posts` - Fetch all posts (with optional limit)
+- `get_post` - Fetch a specific post by ID
+- `get_user` - Fetch user information by ID
+
+The agent autonomously:
+1. Creates the server scaffold
+2. Implements each tool with proper error handling
+3. Validates the server syntax
+4. Deploys it for immediate use
+
+### Use Cases
+
+- Wrap REST APIs as MCP servers
+- Create domain-specific tool integrations
+- Build custom workflows for internal services
+- Extend agent capabilities without code changes
+
+## Contributions
+
 Contributions welcome! Ideas:
 
 - Add more MCP servers (Jira, Slack, etc.)
+- Enhance MCP builder with runtime testing capabilities
 - Back the queue with Redis or SQS for distributed workers
 - Instrument tracing or metrics (OpenTelemetry, Prometheus)
 - Publish additional scenario templates or runbooks
@@ -239,4 +320,4 @@ MIT - see `LICENSE`.
 
 ---
 
-Built with love using Deep Agents plus E2B sandboxes.
+Built with Deep Agents plus E2B sandboxes.
