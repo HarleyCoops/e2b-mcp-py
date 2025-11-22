@@ -62,37 +62,47 @@ class E2BSandboxTools:
             Returns:
                 Dictionary with stdout, stderr, and exit_code
             """
-            result = tools_instance._with_auth_guard(
-                "execute_sandbox_command",
-                lambda: tools_instance.sandbox.commands.run(command, timeout=timeout),
-            )
-            
-            # Enhanced error detection for common issues
-            stderr = result.stderr or ""
-            stdout = result.stdout or ""
-            
+            try:
+                result = tools_instance._with_auth_guard(
+                    "execute_sandbox_command",
+                    lambda: tools_instance.sandbox.commands.run(command, timeout=timeout),
+                )
+                
+                # Enhanced error detection for common issues
+                stderr = result.stderr or ""
+                stdout = result.stdout or ""
+                exit_code = result.exit_code
+            except Exception as e:
+                # Handle cases where commands.run raises an exception (e.g. non-zero exit code in newer E2B SDK)
+                return {
+                    "stdout": "",
+                    "stderr": f"Command failed with exception: {str(e)}",
+                    "exit_code": 1,
+                    "error_type": "CommandExecutionError",
+                }
+
             # Check for division by zero errors
             if "ZeroDivisionError" in stderr or "ZeroDivisionError" in stdout:
                 return {
                     "stdout": stdout,
                     "stderr": stderr + "\n[ERROR DETECTED] ZeroDivisionError: Division by zero occurred. This often happens when computing ratios with empty datasets. Check if your data source returned any results before performing division operations.",
-                    "exit_code": result.exit_code,
+                    "exit_code": exit_code,
                     "error_type": "ZeroDivisionError",
                 }
             
             # Check for empty result patterns
-            if result.exit_code != 0 and ("empty" in stderr.lower() or "no data" in stderr.lower()):
+            if exit_code != 0 and ("empty" in stderr.lower() or "no data" in stderr.lower()):
                 return {
                     "stdout": stdout,
                     "stderr": stderr + "\n[WARNING] Empty dataset detected. Verify that your data source (GitHub MCP, Notion MCP, etc.) returned results and that you have proper permissions/scopes.",
-                    "exit_code": result.exit_code,
+                    "exit_code": exit_code,
                     "error_type": "EmptyDataset",
                 }
             
             return {
                 "stdout": stdout,
                 "stderr": stderr,
-                "exit_code": result.exit_code,
+                "exit_code": exit_code,
             }
 
         @tool

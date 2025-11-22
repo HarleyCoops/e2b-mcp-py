@@ -1,12 +1,8 @@
 """
-Deep Agent with E2B Sandbox Integration
+LangGraph Agent with E2B Sandbox Integration
 
 Modern stateful agent implementation using LangGraph for improved planning,
 execution, and state management with E2B sandboxes and MCP server access.
-
-This module has been migrated from deepagents to LangGraph for better state management,
-debugging capabilities, and modern agent patterns. The legacy deepagents implementation
-is preserved in legacy_deep_agent.py for reference.
 """
 
 import asyncio
@@ -36,14 +32,12 @@ class AgentState(TypedDict):
     iteration_count: int  # Track iterations to prevent infinite loops
 
 
-class DeepAgentE2B:
+class LangGraphAgentE2B:
     """
     A LangGraph-based agent implementation integrated with E2B sandboxes.
 
     This agent uses LangGraph's stateful execution model for better planning,
     debugging, and error handling compared to traditional chain-based approaches.
-    
-    Migrated from deepagents to LangGraph for improved state management and modern patterns.
     """
 
     def __init__(
@@ -57,7 +51,7 @@ class DeepAgentE2B:
         max_iterations: int = 25,
     ):
         """
-        Initialize the Deep Agent with E2B integration.
+        Initialize the LangGraph Agent with E2B integration.
 
         Args:
             anthropic_api_key: Anthropic API key (defaults to ANTHROPIC_API_KEY env var)
@@ -142,14 +136,10 @@ class DeepAgentE2B:
             try:
                 mcp_token = self.sandbox.get_mcp_token()
                 self._configure_mcp_gateway(mcp_url, mcp_token)
-                # Note: MCP tools from langchain-mcp-adapters are async-only
-                # They're incompatible with LangGraph's sync ToolNode
-                # The Claude CLI integration provides MCP access instead
-                print("  MCP tools accessible via Claude CLI (not loaded as LangChain tools)")
+                mcp_langchain_tools = self._load_mcp_langchain_tools(mcp_url, mcp_token)
+                self.tools.extend(mcp_langchain_tools)
             except AttributeError:
                 print("  Warning: MCP token not available, skipping MCP gateway setup")
-            except Exception as e:
-                print(f"  Warning: Error setting up MCP gateway: {e}")
 
     def _setup_graph(self):
         """Initialize the LangGraph state machine."""
@@ -263,7 +253,7 @@ Remember: You're in a secure E2B sandbox, so you can safely execute code and exp
 
     def invoke(self, task: str) -> dict:
         """
-        Execute a task using the agent.
+        Execute a task using the LangGraph agent.
 
         Args:
             task: The task description
@@ -311,7 +301,7 @@ Remember: You're in a secure E2B sandbox, so you can safely execute code and exp
 
     def chat(self):
         """Start an interactive chat session."""
-        print("\nStarting interactive chat with Deep Agent (LangGraph)")
+        print("\nStarting interactive chat with LangGraph Agent")
         print("Type 'exit' or 'quit' to end the session\n")
         print("=" * 80)
 
@@ -420,15 +410,40 @@ Remember: You're in a secure E2B sandbox, so you can safely execute code and exp
         else:
             print(f"  Warning: MCP gateway setup had issues: {result.stderr}")
 
+    def _load_mcp_langchain_tools(self, mcp_url: str, mcp_token: str):
+        """Load MCP tools via langchain-mcp-adapters."""
+        print("  Loading MCP tools via langchain-mcp-adapters...")
+        self.mcp_client = MultiServerMCPClient(
+            {
+                "e2b_mcp_gateway": {
+                    "transport": "streamable_http",
+                    "url": mcp_url,
+                    "headers": {"Authorization": f"Bearer {mcp_token}"},
+                }
+            }
+        )
+
+        try:
+            tools = asyncio.run(self.mcp_client.get_tools())
+            print(f"  Loaded {len(tools)} MCP tools via langchain-mcp-adapters")
+            return tools
+        except Exception as exc:
+            print(f"  Warning: Failed to load MCP tools: {exc}")
+            self.mcp_client = None
+            return []
+
+
+# Alias for backward compatibility
+DeepAgentE2B = LangGraphAgentE2B
+
 
 def main():
-    """Main entry point for running the deep agent."""
-    with DeepAgentE2B() as agent:
+    """Main entry point for testing the LangGraph agent."""
+    with LangGraphAgentE2B() as agent:
         task = """
         Use the E2B sandbox to:
         1. List my top 5 GitHub repositories by stars
-        2. Create a Notion page summarizing these repositories
-        3. Include repository names, descriptions, star counts, and primary languages
+        2. Create a summary of these repositories
         """
 
         result = agent.invoke(task)

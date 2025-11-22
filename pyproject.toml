@@ -7,7 +7,6 @@ requires-python = ">=3.13"
 dependencies = [
     "e2b>=2.3.4",
     "python-dotenv>=1.1.1",
-    "deepagents>=0.1.0",
     "langchain>=0.3.0",
     "langchain-anthropic>=0.3.0",
     "langgraph>=0.2.0",

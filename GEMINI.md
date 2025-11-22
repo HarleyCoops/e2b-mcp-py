@@ -172,10 +172,14 @@ docker-compose -f docker-compose.gemini.yml run --rm gemini-cli "List all Python
 You already have the Docker MCP server configured! This allows Gemini CLI to interact with Docker containers directly.
 
 **Available Docker MCP Tools:**
-- Container management
-- Image building
-- Volume management
-- Network operations
+- Container management (create, start, stop, remove, list, inspect, logs, exec)
+- Image operations (build, pull, push, list, inspect, remove, tag)
+- Volume management (create, list, inspect, remove, prune)
+- Network operations (create, list, inspect, connect, disconnect, remove)
+- Docker Compose (up, down, build, logs, ps, scale)
+- System monitoring (info, disk usage, prune, version)
+
+**Total: 40+ tools available**
 
 **Example Usage:**
 
@@ -186,7 +190,14 @@ gemini "List all running Docker containers"
 gemini "Build a Docker image for this project"
 
 gemini "Create a Docker container with Python 3.13"
+
+gemini "Set up a complete development environment with multiple containers"
 ```
+
+**For comprehensive Docker MCP usage, see:**
+- `DOCKER-MCP-GUIDE.md` - Complete guide with all tools and capabilities
+- `DOCKER-MCP-EXAMPLES.md` - Practical examples and real-world scenarios
+- `DOCKER-MCP-SUMMARY.md` - Quick reference
 
 ## EC2 Sandbox Integration
 
@@ -607,11 +618,39 @@ gemini -s "query"                # Run with sandbox
 
 ## Next Steps
 
-1. **Configure MCP Servers:** Add GitHub, Notion, and other integrations
+1. **Configure MCP Servers:** Add GitHub, Notion, Google Drive, and other integrations
 2. **Set Up Docker:** Create docker-compose.yml for easy development
 3. **EC2 Setup:** Install and configure Gemini CLI on your EC2 instance
 4. **Create Workflows:** Build scripts to maximize usage across environments
 5. **Integrate with E2B:** Combine Gemini CLI with your existing E2B sandbox tools
+
+## Additional MCP Servers
+
+### Google Drive MCP
+
+You can install a Google Drive MCP server to interact with Google Drive files:
+
+**Quick Setup:**
+```powershell
+# Install package
+npm install -g @piotr-agier/google-drive-mcp
+
+# Set credentials (after setting up Google Cloud OAuth)
+$env:GOOGLE_DRIVE_OAUTH_CREDENTIALS = "C:\path\to\gcp-oauth.keys.json"
+
+# Authenticate
+npx @piotr-agier/google-drive-mcp auth
+
+# Add to Gemini CLI
+gemini mcp add google-drive `
+  --command "npx" `
+  --args "-y", "@piotr-agier/google-drive-mcp" `
+  --env "GOOGLE_DRIVE_OAUTH_CREDENTIALS=$env:GOOGLE_DRIVE_OAUTH_CREDENTIALS"
+```
+
+**For complete setup instructions, see:**
+- `GOOGLE-DRIVE-MCP-SETUP.md` - Complete setup guide
+- `setup-google-drive-mcp.ps1` - Automated setup script
 
 ## Resources
 
