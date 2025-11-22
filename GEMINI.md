@@ -25,13 +25,13 @@ Gemini CLI uses the `GEMINI_API_KEY` environment variable for authentication. Co
 
 ```powershell
 # Windows PowerShell
-$env:GEMINI_API_KEY = "AIzaSyCyqhETOJEr7Hs1DQT3AP-VhRkWFrVrTB8"
+$env:GEMINI_API_KEY = "your-gemini-api-key-here"
 # Or add to .env file
 ```
 
 ```bash
 # macOS/Linux
-export GEMINI_API_KEY="AIzaSyCyqhETOJEr7Hs1DQT3AP-VhRkWFrVrTB8"
+export GEMINI_API_KEY="your-gemini-api-key-here"
 # Or add to .env file
 ```
 
@@ -619,4 +619,3 @@ gemini -s "query"                # Run with sandbox
 - [MCP Protocol](https://modelcontextprotocol.io/)
 - [E2B Documentation](https://e2b.dev/docs)
 - [Docker Documentation](https://docs.docker.com/)
-
