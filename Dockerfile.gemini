@@ -1,18 +1,29 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
-# Install Gemini CLI globally
-RUN npm install -g @google/gemini-cli
-
-# Install additional tools
+# Install Python and build tools first (needed for node-gyp)
 RUN apk add --no-cache \
     python3 \
     py3-pip \
     git \
     curl \
-    bash
+    bash \
+    make \
+    g++ \
+    python3-dev \
+    linux-headers
 
-# Install uv for Python package management
-RUN pip3 install uv
+# Create python symlink for node-gyp (it expects 'python' not 'python3')
+RUN ln -sf python3 /usr/bin/python
+
+# Set Python path for node-gyp
+ENV PYTHON=/usr/bin/python3
+
+# Install Gemini CLI globally
+RUN npm install -g @google/gemini-cli
+
+# Install uv for Python package management using official installer
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
 
 # Set working directory
 WORKDIR /workspace
