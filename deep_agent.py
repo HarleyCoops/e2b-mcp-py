@@ -138,16 +138,16 @@ class DeepAgentE2B:
 
         # Load MCP tools if servers configured
         if mcp_servers:
-            mcp_url = self.sandbox.get_mcp_url()
             try:
-                mcp_token = self.sandbox.get_mcp_token()
+                mcp_url = self.sandbox.beta_get_mcp_url()
+                mcp_token = self.sandbox.beta_get_mcp_token()
                 self._configure_mcp_gateway(mcp_url, mcp_token)
                 # Note: MCP tools from langchain-mcp-adapters are async-only
                 # They're incompatible with LangGraph's sync ToolNode
                 # The Claude CLI integration provides MCP access instead
                 print("  MCP tools accessible via Claude CLI (not loaded as LangChain tools)")
-            except AttributeError:
-                print("  Warning: MCP token not available, skipping MCP gateway setup")
+            except AttributeError as e:
+                print(f"  Warning: MCP methods not available: {e}")
             except Exception as e:
                 print(f"  Warning: Error setting up MCP gateway: {e}")
 
