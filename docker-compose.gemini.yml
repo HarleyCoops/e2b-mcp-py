@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  gemini-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile.gemini
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - E2B_API_KEY=${E2B_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - NOTION_TOKEN=${NOTION_TOKEN}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - .:/workspace
+      - gemini-config:/root/.config/gemini-cli
+      - gemini-cache:/root/.cache/gemini-cli
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: gemini
+    networks:
+      - gemini-network
+
+volumes:
+  gemini-config:
+  gemini-cache:
+
+networks:
+  gemini-network:
+    driver: bridge
+

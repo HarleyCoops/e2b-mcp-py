@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+# Install Gemini CLI globally
+RUN npm install -g @google/gemini-cli
+
+# Install additional tools
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    git \
+    curl \
+    bash
+
+# Install uv for Python package management
+RUN pip3 install uv
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy project files (exclude .env, .venv, etc.)
+COPY . .
+
+# Default command - interactive Gemini CLI
+CMD ["gemini"]
+
